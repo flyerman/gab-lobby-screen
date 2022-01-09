@@ -62,6 +62,48 @@ refresh token: ${refresh_token}
 </html>`;
 }
 
+const get_checkins_page = function () {
+
+    //console.log(checkins_list);
+
+    var checkins_page = '<html><head><meta charset="UTF-8"></head><body>';
+
+    for (let i = 0; i < checkins_list.length; i++) {
+
+        //var ck = checkins.shift();
+        var rooms = {};
+
+        checkins_page += `<p>${checkins_list[i].guestName}`;
+
+        for (const [key, guest] of Object.entries(checkins_list[i].guestList)) {
+            guest.rooms.forEach(function(room) {
+                if (rooms[room.roomName] == null) {
+                    rooms[room.roomName] = {
+                        "guests": [guest.guestName],
+                        "roomName": room.roomName,
+                        "roomTypeName": room.roomTypeName
+                    };
+                } else {
+                    rooms[room.roomName].guests.push(guest.guestName);
+                }
+            });
+        }
+
+        checkins_page += "<ul>";
+        for (const [key, value] of Object.entries(rooms)) {
+            checkins_page += "<li>";
+            checkins_page += `Room ${key} 🛏 ${value.guests.join(", ")}`;
+            checkins_page += "</li>";
+        }
+        checkins_page += "</ul>";
+
+        checkins_page += "</p>";
+    }
+
+    checkins_page += "</body></html>";
+    return checkins_page;
+}
+
 const get_oauth2_access_token = function (code) {
 
     oauth2_code = code;
@@ -132,7 +174,6 @@ const get_checkins = function(date) {
             json_response = JSON.parse(response_buf);
             console.log(json_response);
             checkins_list = json_response.data;
-            console.log(checkins_list);
         })
     });
 
@@ -147,7 +188,7 @@ const get_checkins = function(date) {
 const app = function (req, res) {
 
     var url_parts = url.parse(req.url, true);
-    console.log(url_parts.query);
+    //console.log(url_parts.query);
 
     if ("code" in url_parts.query) {
         get_oauth2_access_token(url_parts.query["code"]);
@@ -157,6 +198,11 @@ const app = function (req, res) {
         date = url_parts.query["date"];
         if (date == "today") {
             date = get_today_string();
+        }
+        if (checkins_list) {
+            res.writeHead(200, {'Content-Type': 'text/html'});
+            res.end(get_checkins_page());
+            return;
         }
         get_checkins(date);
     }
