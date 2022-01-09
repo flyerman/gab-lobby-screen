@@ -138,6 +138,51 @@ const get_oauth2_access_token = function (code) {
             console.log(json_response);
             console.log(`access token: ${access_token}`);
             console.log(`refresh token: ${refresh_token}`);
+
+            setInterval(refresh_access_token, 600000);
+        })
+    });
+
+    req.on('error', error => {
+        console.error(error);
+    });
+
+    req.write(form_data);
+    req.end();
+}
+
+const refresh_access_token = function() {
+
+    console.log("refresh access token");
+    form_data = `${encodeURI('grant_type')}=${encodeURI("refresh_token")}`;
+    form_data += `&${encodeURI('refresh_token')}=${encodeURI(refresh_token)}`;
+    form_data += `&${encodeURI('client_id')}=${encodeURI(oauth2_clientid)}`;
+    form_data += `&${encodeURI('client_secret')}=${encodeURI(oauth2_secret)}`;
+
+    console.log(`form_data: ${form_data}`);
+
+    const options = {
+        hostname: 'hotels.cloudbeds.com',
+        port: 443,
+        path: '/api/v1.1/access_token',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Length': Buffer.byteLength(form_data),
+            'Accept': 'application/json'
+        }
+    };
+
+    const req = https.request(options, res => {
+        console.log(`statusCode: ${res.statusCode}`);
+
+        res.on('data', d => {
+            json_response = JSON.parse(d);
+            access_token  = json_response.access_token;
+            refresh_token = json_response.refresh_token;
+            console.log(json_response);
+            console.log(`access token: ${access_token}`);
+            console.log(`refresh token: ${refresh_token}`);
         })
     });
 
