@@ -24,12 +24,22 @@ var oauth2_access_token = "N/A";
 var oauth2_clientid     = "live1_198685_KantFDrlXQwShJNW9YRdCj0Z";
 var oauth2_redirecturi  = "https://localhost:8888";
 
-const get_html_page = function() {
+var access_token;
+var refresh_token;
+var checkins_list;
+
+const get_home_page = function() {
     return `<html>
 <body>
   <a href="https://hotels.cloudbeds.com/api/v1.1/oauth?client_id=${oauth2_clientid}&redirect_uri=${oauth2_redirecturi}&response_type=code">Get Cloudbeds auth token</a>
 <p>
 Code: ${oauth2_code}
+</p>
+<p>
+access token: ${access_token}
+</p>
+<p>
+refresh token: ${refresh_token}
 </p>
 </body>
 </html>`;
@@ -63,7 +73,49 @@ const get_oauth2_access_token = function (code) {
         console.log(`statusCode: ${res.statusCode}`);
 
         res.on('data', d => {
-          console.log(JSON.parse(d));
+            json_response = JSON.parse(d);
+            access_token  = json_response.access_token;
+            refresh_token = json_response.refresh_token;
+            console.log(json_response);
+            console.log(`access token: ${access_token}`);
+            console.log(`refresh token: ${refresh_token}`);
+        })
+    });
+
+    req.on('error', error => {
+        console.error(error);
+    });
+
+    req.write(form_data);
+    req.end();
+}
+
+const get_checkins = function(date) {
+
+    const options = {
+        hostname: 'hotels.cloudbeds.com',
+        port: 443,
+        path: `/api/v1.1/getReservations?checkInFrom=${date}&checkInTo=${date}&includeGuestsDetails=true`,
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${access_token}`
+        }
+    };
+
+    const req = https.request(options, res => {
+        console.log(`statusCode: ${res.statusCode}`);
+        response_buf = "";
+
+        res.on('data', d => {
+            response_buf += d;
+        });
+
+        res.on('end', () => {
+            json_response = JSON.parse(response_buf);
+            console.log(json_response);
+            checkins_list = json_response.data;
+            console.log(checkins_list);
         })
     });
 
@@ -84,8 +136,12 @@ const app = function (req, res) {
         get_oauth2_access_token(url_parts.query["code"]);
     }
 
+    if ("date" in url_parts.query) {
+        get_checkins("2021-12-28");
+    }
+
     res.writeHead(200, {'Content-Type': 'text/html'});
-    res.end(get_html_page());
+    res.end(get_home_page());
 }
 
 https.createServer(options, app).listen(portnumber);
