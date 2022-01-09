@@ -19,10 +19,10 @@ const options = {
     cert: fs.readFileSync(certfilepath)
 };
 
-var oauth2_code         = "N/A";
-var oauth2_access_token = "N/A";
+var oauth2_code;
+var oauth2_access_token;
 var oauth2_clientid     = "live1_198685_KantFDrlXQwShJNW9YRdCj0Z";
-var oauth2_redirecturi  = "https://localhost:8888";
+var oauth2_redirecturi  = "https://localhost:8888/?date=today";
 
 var access_token;
 var refresh_token;
@@ -45,6 +45,8 @@ const get_today_string = function() {
     return todayString;
 }
 
+var checkin_date = get_today_string();
+
 const get_home_page = function() {
     return `<html>
 <body>
@@ -62,51 +64,66 @@ refresh token: ${refresh_token}
 </html>`;
 }
 
+const get_human_readable_date = function () {
+    var tha_date = new Date(checkin_date + "T12:00:00-05:00");
+    return tha_date.toDateString();
+}
+
 const get_checkins_page = function () {
 
     //console.log(checkins_list);
 
     var checkins_page = '<html><head><meta charset="UTF-8"></head><body>';
 
-    for (let i = 0; i < checkins_list.length; i++) {
+    if (checkins_list) {
+        checkins_page += "<script>window.setTimeout(function(){location.reload()},120000)</script>";
 
-        //var ck = checkins.shift();
-        var rooms = {};
+        checkins_page += `<h1>${checkins_list.length} Checkins of ${get_human_readable_date()}</h1>`;
+        checkins_page += "<h2>";
 
-        checkins_page += `<p>${checkins_list[i].guestName}`;
+        for (let i = 0; i < checkins_list.length; i++) {
 
-        for (const [key, guest] of Object.entries(checkins_list[i].guestList)) {
-            guest.rooms.forEach(function(room) {
-                if (rooms[room.roomName] == null) {
-                    rooms[room.roomName] = {
-                        "guests": [guest.guestName],
-                        "roomName": room.roomName,
-                        "roomTypeName": room.roomTypeName
-                    };
-                } else {
-                    rooms[room.roomName].guests.push(guest.guestName);
-                }
-            });
+            //var ck = checkins.shift();
+            var rooms = {};
+
+            checkins_page += `<p>${checkins_list[i].guestName}`;
+
+            for (const [key, guest] of Object.entries(checkins_list[i].guestList)) {
+                guest.rooms.forEach(function(room) {
+                    if (rooms[room.roomName] == null) {
+                        rooms[room.roomName] = {
+                            "guests": [guest.guestName],
+                            "roomName": room.roomName,
+                            "roomTypeName": room.roomTypeName
+                        };
+                    } else {
+                        rooms[room.roomName].guests.push(guest.guestName);
+                    }
+                });
+            }
+
+            checkins_page += "<ul>";
+            for (const [key, value] of Object.entries(rooms)) {
+                checkins_page += "<li>";
+                checkins_page += `Room ${key} 🛏 ${value.guests.join(", ")}`;
+                checkins_page += "</li>";
+            }
+            checkins_page += "</ul>";
+
+            checkins_page += "</p>";
         }
+        checkins_page += "</h2>";
 
-        checkins_page += "<ul>";
-        for (const [key, value] of Object.entries(rooms)) {
-            checkins_page += "<li>";
-            checkins_page += `Room ${key} 🛏 ${value.guests.join(", ")}`;
-            checkins_page += "</li>";
-        }
-        checkins_page += "</ul>";
-
-        checkins_page += "</p>";
+    } else { // The first checkin querry is still pending
+        checkins_page += "Loading...";
+        checkins_page += "<script>window.setTimeout(function(){location.reload()},2000)</script>"
     }
 
     checkins_page += "</body></html>";
     return checkins_page;
 }
 
-const get_oauth2_access_token = function (code) {
-
-    oauth2_code = code;
+const get_oauth2_access_token = function () {
 
     form_data = `${encodeURI('grant_type')}=${encodeURI("authorization_code")}`;
     form_data += `&${encodeURI('client_id')}=${encodeURI(oauth2_clientid)}`;
@@ -140,6 +157,7 @@ const get_oauth2_access_token = function (code) {
             console.log(`refresh token: ${refresh_token}`);
 
             setInterval(refresh_access_token, 600000);
+            //setInterval(get_checkins, 60000);
         })
     });
 
@@ -194,12 +212,12 @@ const refresh_access_token = function() {
     req.end();
 }
 
-const get_checkins = function(date) {
+const get_checkins = function() {
 
     const options = {
         hostname: 'hotels.cloudbeds.com',
         port: 443,
-        path: `/api/v1.1/getReservations?checkInFrom=${date}&checkInTo=${date}&includeGuestsDetails=true`,
+        path: `/api/v1.1/getReservations?checkInFrom=${checkin_date}&checkInTo=${checkin_date}&includeGuestsDetails=true`,
         method: 'GET',
         headers: {
             'Accept': 'application/json',
@@ -235,21 +253,22 @@ const app = function (req, res) {
     var url_parts = url.parse(req.url, true);
     //console.log(url_parts.query);
 
-    if ("code" in url_parts.query) {
-        get_oauth2_access_token(url_parts.query["code"]);
+    if ("code" in url_parts.query && !oauth2_code) {
+        oauth2_code = url_parts.query["code"];
+        get_oauth2_access_token();
     }
 
     if ("date" in url_parts.query) {
-        date = url_parts.query["date"];
-        if (date == "today") {
-            date = get_today_string();
+        checkin_date = url_parts.query["date"];
+        if (checkin_date == "today") {
+            checkin_date = get_today_string();
         }
-        if (checkins_list) {
-            res.writeHead(200, {'Content-Type': 'text/html'});
-            res.end(get_checkins_page());
-            return;
+        if (access_token) {
+            get_checkins();
         }
-        get_checkins(date);
+        res.writeHead(200, {'Content-Type': 'text/html'});
+        res.end(get_checkins_page());
+        return;
     }
 
     res.writeHead(200, {'Content-Type': 'text/html'});
