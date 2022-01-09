@@ -28,6 +28,23 @@ var access_token;
 var refresh_token;
 var checkins_list;
 
+const get_today_string = function() {
+    var current = new Date();
+    var dd = current.getDate();
+    var mm = current.getMonth() + 1;
+    var yyyy = current.getFullYear();
+
+    if (dd < 10) {
+        dd = '0' + dd;
+    }
+    if (mm < 10) {
+        mm = '0' + mm;
+    }
+
+    var todayString = yyyy+'-'+mm+'-'+dd;
+    return todayString;
+}
+
 const get_home_page = function() {
     return `<html>
 <body>
@@ -137,7 +154,11 @@ const app = function (req, res) {
     }
 
     if ("date" in url_parts.query) {
-        get_checkins("2021-12-28");
+        date = url_parts.query["date"];
+        if (date == "today") {
+            date = get_today_string();
+        }
+        get_checkins(date);
     }
 
     res.writeHead(200, {'Content-Type': 'text/html'});
