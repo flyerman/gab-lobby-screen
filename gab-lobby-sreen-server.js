@@ -46,6 +46,7 @@ const get_today_string = function() {
 }
 
 var checkin_date = get_today_string();
+var fetching_checkins = false;
 
 const get_home_page = function() {
     return `<html>
@@ -73,13 +74,47 @@ const get_checkins_page = function () {
 
     //console.log(checkins_list);
 
-    var checkins_page = '<html><head><meta charset="UTF-8"></head><body>';
+    var checkins_page = `<html>
+        <head>
+            <meta charset="UTF-8"/>
+            <style>
+            </style>
+            <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+            <script>
+            </script>
+        </head>
+        <body>`;
 
     if (checkins_list) {
+
         checkins_page += "<script>window.setTimeout(function(){location.reload()},120000)</script>";
 
+        checkins_page += `
+            <script>
+                $(document).ready(function() {
+                    var body = $('body');
+                    var mul = 1;
+
+                    setInterval(function() {
+                        var old_pos = body.scrollTop();
+                        if (old_pos == 0) {
+                            mul = 1;
+                        }
+                        var new_pos = old_pos + (200 * mul);
+                        if (new_pos < 0) {
+                            new_pos = 0;
+                        }
+                        body.animate({scrollTop: new_pos}, 500, "swing", function(){
+                            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
+                                mul = -1;
+                            }
+                        });
+                    }, 4000);
+                });
+            </script>`;
+
         checkins_page += `<h1>${checkins_list.length} Checkins of ${get_human_readable_date()}</h1>`;
-        checkins_page += "<h2>";
+        checkins_page += '<h3>';
 
         for (let i = 0; i < checkins_list.length; i++) {
 
@@ -112,7 +147,11 @@ const get_checkins_page = function () {
 
             checkins_page += "</p>";
         }
-        checkins_page += "</h2>";
+        checkins_page += `<p>&nbsp;</p>`;
+        checkins_page += `<p>&nbsp;</p>`;
+        checkins_page += `<p>&nbsp;</p>`;
+        checkins_page += `<h4>${checkins_list.length} Checkins of ${get_human_readable_date()}</h4>`;
+        checkins_page += "</h3>";
 
     } else { // The first checkin querry is still pending
         checkins_page += "Loading...";
@@ -214,6 +253,8 @@ const refresh_access_token = function() {
 
 const get_checkins = function() {
 
+    fetching_checkins = true;
+
     const options = {
         hostname: 'hotels.cloudbeds.com',
         port: 443,
@@ -237,11 +278,13 @@ const get_checkins = function() {
             json_response = JSON.parse(response_buf);
             console.log(json_response);
             checkins_list = json_response.data;
+            fetching_checkins = false;
         })
     });
 
     req.on('error', error => {
         console.error(error);
+        fetching_checkins = false;
     });
 
     req.write(form_data);
@@ -259,11 +302,15 @@ const app = function (req, res) {
     }
 
     if ("date" in url_parts.query) {
-        checkin_date = url_parts.query["date"];
-        if (checkin_date == "today") {
-            checkin_date = get_today_string();
+        new_date = url_parts.query["date"];
+        if (new_date == "today") {
+            new_date = get_today_string();
         }
-        if (access_token) {
+        if (new_date != checkin_date) {
+            checkins_list = undefined;
+            checkin_date = new_date;
+        }
+        if (access_token && fetching_checkins == false) {
             get_checkins();
         }
         res.writeHead(200, {'Content-Type': 'text/html'});
