@@ -15,6 +15,8 @@ const certfilepath  = argv[1];
 const keyfilepath   = argv[2];
 const oauth2_secret = argv[3];
 
+const token_file = ".tokens.json";
+
 const options = {
     key: fs.readFileSync(keyfilepath),
     cert: fs.readFileSync(certfilepath)
@@ -73,6 +75,25 @@ const get_checkins_page = function () {
     });
 }
 
+const save_tokens = function () {
+
+    const token_file_tmp = `"${token_file}.tmp`;
+
+    let tokens = {
+        access_token: access_token,
+        refresh_token: refresh_token
+    };
+
+    let data = JSON.stringify(tokens, null, 2);
+
+    fs.writeFile(token_file_tmp, data, (err) => {
+        if (err) throw err;
+
+        fs.renameSync(token_file_tmp, token_file);
+        console.log(`Cloudbeds tokens saved to ${token_file}`);
+    });
+}
+
 const get_oauth2_access_token = function () {
 
     form_data = `${encodeURI('grant_type')}=${encodeURI("authorization_code")}`;
@@ -102,12 +123,8 @@ const get_oauth2_access_token = function () {
             json_response = JSON.parse(d);
             access_token  = json_response.access_token;
             refresh_token = json_response.refresh_token;
-            console.log(json_response);
-            console.log(`access token: ${access_token}`);
-            console.log(`refresh token: ${refresh_token}`);
-
+            save_tokens();
             setInterval(refresh_access_token, 600000);
-            //setInterval(get_checkins, 60000);
         })
     });
 
@@ -148,9 +165,7 @@ const refresh_access_token = function() {
             json_response = JSON.parse(d);
             access_token  = json_response.access_token;
             refresh_token = json_response.refresh_token;
-            console.log(json_response);
-            console.log(`access token: ${access_token}`);
-            console.log(`refresh token: ${refresh_token}`);
+            save_tokens();
         })
     });
 
@@ -255,5 +270,17 @@ const app = function (req, res) {
 const compiled_homepage = pug.compileFile('template_homepage.pug');
 const compiled_loadpage = pug.compileFile('template_loadpage.pug');
 const compiled_checkins = pug.compileFile('template_checkins.pug');
+
+try {
+    if (fs.existsSync(token_file)) {
+        console.log(`Loading Cloudbeds tokens from ${token_file}`);
+        let rawtokendata = fs.readFileSync(token_file);
+        let tokens = JSON.parse(rawtokendata);
+        refresh_token = tokens.refresh_token;
+        refresh_access_token();
+    }
+} catch(err) {
+    fs.unlinkSync(token_file);
+}
 
 https.createServer(options, app).listen(portnumber);
