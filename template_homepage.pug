@@ -1,0 +1,5 @@
+//- template.pug
+-var cloudbeds_url = `https://hotels.cloudbeds.com/api/v1.1/oauth?client_id=${oauth2_clientid}&redirect_uri=${oauth2_redirecturi}&response_type=code`
+html
+    body
+        a(href=cloudbeds_url) Get Cloudbeds auth token

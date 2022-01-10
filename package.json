@@ -16,5 +16,7 @@
     "url": "https://github.com/flyerman/gab-lobby-screen/issues"
   },
   "homepage": "https://github.com/flyerman/gab-lobby-screen#readme",
-  "dependencies": {}
+  "dependencies": {
+    "pug": "^3.0.2"
+  }
 }

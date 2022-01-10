@@ -1,6 +1,7 @@
 const https = require('https');
 const fs    = require('fs');
 const url   = require('url');
+const pug   = require('pug');
 
 const argv = process.argv.slice(2);
 
@@ -49,20 +50,10 @@ var checkin_date = get_today_string();
 var fetching_checkins = false;
 
 const get_home_page = function() {
-    return `<html>
-<body>
-  <a href="https://hotels.cloudbeds.com/api/v1.1/oauth?client_id=${oauth2_clientid}&redirect_uri=${oauth2_redirecturi}&response_type=code">Get Cloudbeds auth token</a>
-<p>
-Code: ${oauth2_code}
-</p>
-<p>
-access token: ${access_token}
-</p>
-<p>
-refresh token: ${refresh_token}
-</p>
-</body>
-</html>`;
+    return compiled_homepage({
+        oauth2_clientid: oauth2_clientid,
+        oauth2_redirecturi: oauth2_redirecturi
+    });
 }
 
 const get_human_readable_date = function () {
@@ -321,5 +312,7 @@ const app = function (req, res) {
     res.writeHead(200, {'Content-Type': 'text/html'});
     res.end(get_home_page());
 }
+
+const compiled_homepage = pug.compileFile('template_homepage.pug');
 
 https.createServer(options, app).listen(portnumber);
