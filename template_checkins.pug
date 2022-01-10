@@ -1,0 +1,37 @@
+html
+    head
+        meta(charset="UTF-8")
+        script(src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js")
+    body
+        script window.setTimeout(function(){location.reload()},120000)
+        script.
+            $(document).ready(function() {
+                var body = $('body');
+                var mul = 1;
+
+                setInterval(function() {
+                    var old_pos = body.scrollTop();
+                    if (old_pos == 0) {
+                        mul = 1;
+                    }
+                    var new_pos = old_pos + (200 * mul);
+                    if (new_pos < 0) {
+                        new_pos = 0;
+                    }
+                    body.animate({scrollTop: new_pos}, 500, "swing", function(){
+                        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
+                            mul = -1;
+                        }
+                    });
+                }, 4000);
+            });
+
+        h1 #{checkins_list.length} Checkins of #{human_readable_date}
+
+        h3
+            each ck in checkins_list
+                -var rooms = {};
+                p #{ck.guestName}
+                    ul
+                        each room in ck.rooms
+                            li Room #{room.roomName} 🛏 #{room.guests.join(", ")}

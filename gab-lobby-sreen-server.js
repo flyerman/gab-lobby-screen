@@ -63,94 +63,14 @@ const get_human_readable_date = function () {
 
 const get_checkins_page = function () {
 
-    //console.log(checkins_list);
-
-    var checkins_page = `<html>
-        <head>
-            <meta charset="UTF-8"/>
-            <style>
-            </style>
-            <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-            <script>
-            </script>
-        </head>
-        <body>`;
-
-    if (checkins_list) {
-
-        checkins_page += "<script>window.setTimeout(function(){location.reload()},120000)</script>";
-
-        checkins_page += `
-            <script>
-                $(document).ready(function() {
-                    var body = $('body');
-                    var mul = 1;
-
-                    setInterval(function() {
-                        var old_pos = body.scrollTop();
-                        if (old_pos == 0) {
-                            mul = 1;
-                        }
-                        var new_pos = old_pos + (200 * mul);
-                        if (new_pos < 0) {
-                            new_pos = 0;
-                        }
-                        body.animate({scrollTop: new_pos}, 500, "swing", function(){
-                            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
-                                mul = -1;
-                            }
-                        });
-                    }, 4000);
-                });
-            </script>`;
-
-        checkins_page += `<h1>${checkins_list.length} Checkins of ${get_human_readable_date()}</h1>`;
-        checkins_page += '<h3>';
-
-        for (let i = 0; i < checkins_list.length; i++) {
-
-            //var ck = checkins.shift();
-            var rooms = {};
-
-            checkins_page += `<p>${checkins_list[i].guestName}`;
-
-            for (const [key, guest] of Object.entries(checkins_list[i].guestList)) {
-                guest.rooms.forEach(function(room) {
-                    if (rooms[room.roomName] == null) {
-                        rooms[room.roomName] = {
-                            "guests": [guest.guestName],
-                            "roomName": room.roomName,
-                            "roomTypeName": room.roomTypeName
-                        };
-                    } else {
-                        rooms[room.roomName].guests.push(guest.guestName);
-                    }
-                });
-            }
-
-            checkins_page += "<ul>";
-            for (const [key, value] of Object.entries(rooms)) {
-                checkins_page += "<li>";
-                checkins_page += `Room ${key} 🛏 ${value.guests.join(", ")}`;
-                checkins_page += "</li>";
-            }
-            checkins_page += "</ul>";
-
-            checkins_page += "</p>";
-        }
-        checkins_page += `<p>&nbsp;</p>`;
-        checkins_page += `<p>&nbsp;</p>`;
-        checkins_page += `<p>&nbsp;</p>`;
-        checkins_page += `<h4>${checkins_list.length} Checkins of ${get_human_readable_date()}</h4>`;
-        checkins_page += "</h3>";
-
-    } else { // The first checkin querry is still pending
-        checkins_page += "Loading...";
-        checkins_page += "<script>window.setTimeout(function(){location.reload()},2000)</script>"
+    if (!checkins_list) {
+        return compiled_loadpage({});
     }
 
-    checkins_page += "</body></html>";
-    return checkins_page;
+    return compiled_checkins({
+        human_readable_date: get_human_readable_date(),
+        checkins_list: checkins_list
+    });
 }
 
 const get_oauth2_access_token = function () {
@@ -269,6 +189,25 @@ const get_checkins = function() {
             json_response = JSON.parse(response_buf);
             console.log(json_response);
             checkins_list = json_response.data;
+
+            // Assemble the list of guests for each room under each reservation
+            for (let i = 0; i < checkins_list.length; i++) {
+                var rooms = {};
+                for (const [key, guest] of Object.entries(checkins_list[i].guestList)) {
+                    guest.rooms.forEach(function(room) {
+                        if (rooms[room.roomName] == null) {
+                            rooms[room.roomName] = {
+                                "guests": [guest.guestName],
+                                "roomName": room.roomName
+                            };
+                        } else {
+                            rooms[room.roomName].guests.push(guest.guestName);
+                        }
+                    });
+                }
+                checkins_list[i].rooms = rooms;
+            }
+
             fetching_checkins = false;
         })
     });
@@ -314,5 +253,7 @@ const app = function (req, res) {
 }
 
 const compiled_homepage = pug.compileFile('template_homepage.pug');
+const compiled_loadpage = pug.compileFile('template_loadpage.pug');
+const compiled_checkins = pug.compileFile('template_checkins.pug');
 
 https.createServer(options, app).listen(portnumber);
