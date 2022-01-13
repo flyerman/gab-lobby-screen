@@ -14,12 +14,17 @@ html(lang="en")
 
         script window.setTimeout(function(){location.reload()},120000)
 
-        h1(style="text-align:center;") #{checkins_list.length} Checkins of #{human_readable_date}
+        div(class="jumbotron")
+            h1(class="display-3") L'Auberge de nos Aïeux vous dit bonjour
+            p(class="lead") Aujourd'hui #{human_readable_date}
 
-        h3
+        div(class="row")
+            -var i = 0;
             each ck in checkins_list
                 -var rooms = {};
-                p #{ck.guestName}
-                    ul
-                        each room in ck.rooms
-                            li Room #{room.roomName} 🛏 #{room.guests.join(", ")}
+                each room in ck.rooms
+                    if room.guests.length > 0
+                        if i % 3 == 0
+                            div(class="w-100")
+                        -i++;
+                        div(class="col-4 h4") Chambre #{room.roomName} #{room.guests.join(", ")}
