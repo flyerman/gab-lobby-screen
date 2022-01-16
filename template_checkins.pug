@@ -24,7 +24,7 @@ html(lang="en")
                 if i % 3 == 0
                     div(class="w-100")
                 -i++;
-                div(class="col-4 h4 rounded p-2 align-middle "+ (i%2==0?"bg-dark text-white":"bg-light"))
+                div(class="col-4 h4 rounded p-2 align-middle "+ (i%2==0?"bg-secondary text-white":"bg-light"))
                     -var r = 0
                     each room in ck.rooms
                         if r > 0
