@@ -206,7 +206,7 @@ const get_checkins = function() {
             checkins_list = json_response.data;
 
             // Assemble the list of guests for each room under each reservation
-            for (let i = 0; i < checkins_list.length; i++) {
+            for (let i = 0; checkins_list && checkins_list.length && i < checkins_list.length; i++) {
                 var rooms = {};
                 for (const [key, guest] of Object.entries(checkins_list[i].guestList)) {
                     guest.rooms.forEach(function(room) {
@@ -278,6 +278,7 @@ try {
         let tokens = JSON.parse(rawtokendata);
         refresh_token = tokens.refresh_token;
         refresh_access_token();
+        setInterval(refresh_access_token, 600000);
     }
 } catch(err) {
     fs.unlinkSync(token_file);
