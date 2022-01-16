@@ -31,10 +31,11 @@ html(lang="en")
                             br
                         -r++
                         -var guests = room.guests.join(", ")
+                        -var icon = (room.roomName.search("Camping") == -1 ? "🛏 Chambre #" : "🏕 ")
                         if guests == ""
-                            span(class="align-middle") 🛏 #{room.roomName} #{ck.guestName}
+                            span(class="align-middle") #{icon}#{room.roomName} #{ck.guestName}
                         else
-                            span(class="align-middle") 🛏 #{room.roomName} #{guests}
+                            span(class="align-middle") #{icon}#{room.roomName} #{guests}
                     if r == 0
                         span(class="align-middle") #{ck.guestName} (room unassigned)
 
