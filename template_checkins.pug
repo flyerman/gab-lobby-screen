@@ -12,19 +12,29 @@ html(lang="en")
         script(src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous")
         script(src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous")
 
-        script window.setTimeout(function(){location.reload()},120000)
+        script window.setTimeout(function(){location.reload()},300000)
 
         div(class="jumbotron")
             h1(class="display-3") L'Auberge de nos Aïeux vous dit bonjour
             p(class="lead") Aujourd'hui #{human_readable_date}
 
-        div(class="row")
+        div(class="row align-items-center")
             -var i = 0;
             each ck in checkins_list
-                -var rooms = {};
-                each room in ck.rooms
-                    if room.guests.length > 0
-                        if i % 3 == 0
-                            div(class="w-100")
-                        -i++;
-                        div(class="col-4 h4") Chambre #{room.roomName} #{room.guests.join(", ")}
+                if i % 3 == 0
+                    div(class="w-100")
+                -i++;
+                div(class="col-4 h4 rounded p-2 align-middle "+ (i%2==0?"bg-dark text-white":"bg-light"))
+                    -var r = 0
+                    each room in ck.rooms
+                        if r > 0
+                            br
+                        -r++
+                        -var guests = room.guests.join(", ")
+                        if guests == ""
+                            span(class="align-middle") 🛏 #{room.roomName} #{ck.guestName}
+                        else
+                            span(class="align-middle") 🛏 #{room.roomName} #{guests}
+
+            if i == 0
+                div(class="col-4 h4 p-5") Aucun checkin.
