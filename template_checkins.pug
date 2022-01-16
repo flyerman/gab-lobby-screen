@@ -35,6 +35,8 @@ html(lang="en")
                             span(class="align-middle") 🛏 #{room.roomName} #{ck.guestName}
                         else
                             span(class="align-middle") 🛏 #{room.roomName} #{guests}
+                    if r == 0
+                        span(class="align-middle") #{ck.guestName} (room unassigned)
 
             if i == 0
                 div(class="col-4 h4 p-5") Aucun checkin.
