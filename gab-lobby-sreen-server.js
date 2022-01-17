@@ -15,7 +15,7 @@ const certfilepath  = argv[1];
 const keyfilepath   = argv[2];
 const oauth2_secret = argv[3];
 
-const token_file = ".tokens.json";
+const token_file = "tokens.json";
 
 const options = {
     key: fs.readFileSync(keyfilepath),
@@ -77,7 +77,7 @@ const get_checkins_page = function () {
 
 const save_tokens = function () {
 
-    const token_file_tmp = `"${token_file}.tmp`;
+    const token_file_tmp = `${token_file}.tmp`;
 
     let tokens = {
         access_token: access_token,
