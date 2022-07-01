@@ -5,15 +5,16 @@ const pug   = require('pug');
 
 const argv = process.argv.slice(2);
 
-if (argv.length != 4) {
-    console.error("Usage: node server.js [port] [path to certificate] [path to key] [oauth2 client secret]");
+if (argv.length != 5) {
+    console.error("Usage: node server.js [port] [path to certificate] [path to key] [oauth2 client secret] [oauth2 client id]");
     process.exit(1);
 }
 
-const portnumber    = argv[0];
-const certfilepath  = argv[1];
-const keyfilepath   = argv[2];
-const oauth2_secret = argv[3];
+const portnumber      = argv[0];
+const certfilepath    = argv[1];
+const keyfilepath     = argv[2];
+const oauth2_secret   = argv[3];
+const oauth2_clientid = argv[4];
 
 const token_file = "tokens.json";
 
@@ -24,8 +25,7 @@ const options = {
 
 var oauth2_code;
 var oauth2_access_token;
-var oauth2_clientid     = "live1_198685_KantFDrlXQwShJNW9YRdCj0Z";
-var oauth2_redirecturi  = "https://localhost:8888/?date=today";
+var oauth2_redirecturi  = `https://localhost:${portnumber}/?date=today`;
 
 var access_token;
 var refresh_token;
