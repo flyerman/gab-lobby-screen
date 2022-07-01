@@ -31,7 +31,11 @@ html(lang="en")
                             br
                         -r++
                         -var guests = room.guests.join(", ")
-                        -var icon = (room.roomName.search("Camping") == -1 ? "🛏 Chambre #" : "🏕 ")
+                        -var icon = "🛏 Chambre #"
+                        if room.roomName.search("Camping") != -1
+                          -var icon = "🏕 "
+                        else if room.roomName.search("VAN") != -1
+                          -var icon = "🚐 "
                         if guests == ""
                             span(class="align-middle") #{icon}#{room.roomName} #{ck.guestName}
                         else
